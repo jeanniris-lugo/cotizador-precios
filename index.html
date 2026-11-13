@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cotizador & Calculadora de Precios</title>
+  <title>Calculadora de Precios y Márgenes</title>
   
   <!-- Configuración PWA -->
   <link rel="manifest" href="manifest.json">
@@ -15,263 +15,180 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen pb-12">
 
-  <!-- Encabezado / Control de Vistas -->
+  <!-- Encabezado -->
   <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50">
     <div class="max-w-3xl mx-auto flex justify-between items-center">
       <h1 class="text-xl font-bold flex items-center gap-2">
-        📦 Mi Cotizador
+        🧮 Calculadora de Precios
       </h1>
-      <!-- Selector de Modo -->
-      <div class="bg-blue-800 p-1 rounded-lg flex text-xs font-semibold">
-        <button id="btn-cliente" onclick="cambiarModo('cliente')" class="px-3 py-1.5 rounded-md bg-white text-blue-800 shadow">
-          Cliente
-        </button>
-        <button id="btn-comerciante" onclick="cambiarModo('comerciante')" class="px-3 py-1.5 rounded-md text-white hover:text-blue-200">
-          Comerciante 🔒
-        </button>
-      </div>
+      <span class="text-xs bg-blue-700 px-2.5 py-1 rounded-full font-medium">Modo Comerciante 🔒</span>
     </div>
   </header>
 
   <main class="max-w-3xl mx-auto p-4 space-y-6">
 
-    <!-- ==================== VISTA CLIENTE ==================== -->
-    <section id="vista-cliente" class="space-y-4">
-      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-lg font-bold text-slate-900 mb-1">Arma tu Lista de Pedido</h2>
-        <p class="text-slate-500 text-sm mb-4">Agrega los productos que deseas consultar o solicitar.</p>
-
-        <form id="form-cliente" onsubmit="agregarProductoCliente(event)" class="space-y-3">
-          <div>
-            <label class="block text-xs font-medium text-slate-700 mb-1">Nombre del producto</label>
-            <input type="text" id="cli-nombre" required placeholder="Ej. Acetaminofén 500mg" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Cantidad</label>
-              <input type="number" id="cli-cantidad" min="1" value="1" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Presentación</label>
-              <select id="cli-tipo" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white">
-                <option value="Bulto/Caja">Bultos / Cajas</option>
-                <option value="Unidades">Unidades / Detal</option>
-              </select>
-            </div>
-          </div>
-          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition">
-            + Agregar a la lista
-          </button>
-        </form>
+    <!-- Control de Tasa del Día -->
+    <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl flex justify-between items-center shadow-sm">
+      <div>
+        <span class="block text-xs font-semibold text-amber-800">Tasa del día ($ / Bs)</span>
+        <span class="text-xs text-amber-600">Ajusta el valor en Bs para el cálculo automático</span>
       </div>
+      <input type="number" id="tasa-bcv" value="60.00" step="0.01" onchange="calcularTodo()" class="w-28 p-2 border border-amber-300 rounded-lg text-right font-bold text-amber-900 bg-white outline-none focus:ring-2 focus:ring-amber-500">
+    </div>
 
-      <!-- Lista agregada por el cliente -->
-      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-        <h3 class="font-bold text-slate-800 mb-3 flex justify-between items-center">
-          <span>Tu Pedido</span>
-          <span id="cant-items" class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">0 productos</span>
-        </h3>
-        <ul id="lista-cliente" class="divide-y divide-slate-100 mb-4">
-          <li class="py-3 text-slate-400 text-center text-sm italic">Tu lista está vacía</li>
-        </ul>
-
-        <button onclick="enviarWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-sm flex justify-center items-center gap-2 shadow-md transition">
-          📲 Enviar Lista por WhatsApp
-        </button>
-      </div>
-    </section>
-
-    <!-- ==================== VISTA COMERCIANTE ==================== -->
-    <section id="vista-comerciante" class="hidden space-y-4">
+    <!-- Formulario para fijar costo y márgenes -->
+    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+      <h2 id="titulo-form" class="text-lg font-bold text-slate-900 mb-3">Registrar Producto</h2>
       
-      <!-- Control de Tasa del Día -->
-      <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl flex justify-between items-center">
+      <form id="form-comerciante" onsubmit="guardarProducto(event)" class="space-y-3">
         <div>
-          <span class="block text-xs font-semibold text-amber-800">Tasa del día ($ / Bs)</span>
-          <span class="text-xs text-amber-600">Ajusta el valor en Bs para el cálculo</span>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Nombre del Producto</label>
+          <input type="text" id="com-nombre" required placeholder="Ej. Jarabe para la tos 120ml" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
         </div>
-        <input type="number" id="tasa-bcv" value="60.00" step="0.01" onchange="calcularTodo()" class="w-28 p-2 border border-amber-300 rounded-lg text-right font-bold text-amber-900 bg-white">
-      </div>
 
-      <!-- Formulario para fijar costo y márgenes -->
-      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-lg font-bold text-slate-900 mb-3">Calculadora de Márgenes</h2>
-        
-        <form id="form-comerciante" onsubmit="agregarProductoComerciante(event)" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-medium text-slate-700 mb-1">Producto</label>
-            <input type="text" id="com-nombre" required placeholder="Ej. Jarabe para la tos 120ml" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <label class="block text-xs font-medium text-slate-700 mb-1">Costo Bulto / Caja ($)</label>
+            <input type="number" id="com-costo" step="0.01" required placeholder="Ej. 50.00" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Costo Bulto ($)</label>
-              <input type="number" id="com-costo" step="0.01" required placeholder="Ej. 50.00" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Unidades x Bulto</label>
-              <input type="number" id="com-unidades" min="1" value="24" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-            </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Unidades x Bulto / Caja</label>
+            <input type="number" id="com-unidades" min="1" value="24" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
+        </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Ganancia Mayor (%)</label>
-              <input type="number" id="com-margen-mayor" value="20" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Ganancia Detal (%)</label>
-              <input type="number" id="com-margen-detal" value="35" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-            </div>
-          </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Ganancia Detal (%)</label>
+          <input type="number" id="com-margen-detal" value="35" step="0.01" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+        </div>
 
-          <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-lg text-sm transition">
-            Calculate y Registrar
+        <div class="flex gap-2 pt-1">
+          <button type="submit" id="btn-submit" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-lg text-sm transition">
+            Guardar y Calcular
           </button>
-        </form>
-      </div>
+          <button type="button" id="btn-cancelar" onclick="cancelarEdicion()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2.5 rounded-lg text-sm transition">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
 
-      <!-- Tabla de Precios Calculados -->
-      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-        <h3 class="font-bold text-slate-800 mb-3">Precios Sugeridos</h3>
-        <table class="w-full text-left text-xs text-slate-600">
-          <thead class="bg-slate-50 text-slate-700 uppercase">
-            <tr>
-              <th class="p-2">Producto</th>
-              <th class="p-2">C/U Costo</th>
-              <th class="p-2">Precio Mayor</th>
-              <th class="p-2">Precio Detal</th>
-            </tr>
-          </thead>
-          <tbody id="tabla-precios" class="divide-y divide-slate-100">
-            <tr>
-              <td colspan="4" class="p-4 text-center text-slate-400 italic">No hay productos procesados</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <!-- Tabla de Precios Calculados -->
+    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+      <h3 class="font-bold text-slate-800 mb-3">Precios Sugeridos de Inventario</h3>
+      <table class="w-full text-left text-xs text-slate-600">
+        <thead class="bg-slate-50 text-slate-700 uppercase">
+          <tr>
+            <th class="p-2.5">Producto</th>
+            <th class="p-2.5">C/U Costo</th>
+            <th class="p-2.5">Precio Detal</th>
+            <th class="p-2.5 text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-precios" class="divide-y divide-slate-100">
+          <tr>
+            <td colspan="4" class="p-4 text-center text-slate-400 italic">No hay productos registrados</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
   </main>
 
   <!-- Lógica JavaScript -->
   <script>
     // Variables de Estado
-    let pedidoCliente = [];
     let inventarioComerciante = [];
+    let indiceEdicion = null; // Controla si se está editando un producto
 
-    // Cambiar entre Pestañas
-    function cambiarModo(modo) {
-      const vCliente = document.getElementById('vista-cliente');
-      const vComerciante = document.getElementById('vista-comerciante');
-      const bCliente = document.getElementById('btn-cliente');
-      const bComerciante = document.getElementById('btn-comerciante');
-
-      if (modo === 'cliente') {
-        vCliente.classList.remove('hidden');
-        vComerciante.classList.add('hidden');
-        bCliente.className = "px-3 py-1.5 rounded-md bg-white text-blue-800 shadow";
-        bComerciante.className = "px-3 py-1.5 rounded-md text-white hover:text-blue-200";
-      } else {
-        vCliente.classList.add('hidden');
-        vComerciante.classList.remove('hidden');
-        bComerciante.className = "px-3 py-1.5 rounded-md bg-white text-blue-800 shadow";
-        bCliente.className = "px-3 py-1.5 rounded-md text-white hover:text-blue-200";
-      }
-    }
-
-    // --- LÓGICA DEL CLIENTE ---
-    function agregarProductoCliente(e) {
-      e.preventDefault();
-      const nombre = document.getElementById('cli-nombre').value.trim();
-      const cantidad = document.getElementById('cli-cantidad').value;
-      const tipo = document.getElementById('cli-tipo').value;
-
-      pedidoCliente.push({ nombre, cantidad, tipo });
-      document.getElementById('form-cliente').reset();
-      renderCliente();
-    }
-
-    function renderCliente() {
-      const lista = document.getElementById('lista-cliente');
-      const contador = document.getElementById('cant-items');
-      
-      contador.innerText = `${pedidoCliente.length} productos`;
-
-      if (pedidoCliente.length === 0) {
-        lista.innerHTML = `<li class="py-3 text-slate-400 text-center text-sm italic">Tu lista está vacía</li>`;
-        return;
-      }
-
-      lista.innerHTML = pedidoCliente.map((item, index) => `
-        <li class="py-2.5 flex justify-between items-center text-sm">
-          <div>
-            <span class="font-medium text-slate-800">${item.nombre}</span>
-            <span class="block text-xs text-slate-500">${item.cantidad} (${item.tipo})</span>
-          </div>
-          <button onclick="eliminarCliente(${index})" class="text-red-500 hover:text-red-700 text-xs font-semibold">
-            Quitar
-          </button>
-        </li>
-      `).join('');
-    }
-
-    function eliminarCliente(index) {
-      pedidoCliente.splice(index, 1);
-      renderCliente();
-    }
-
-    function enviarWhatsApp() {
-      if (pedidoCliente.length === 0) {
-        alert("Agrega al menos un producto antes de enviar.");
-        return;
-      }
-      
-      let mensaje = "Hola, me gustaría cotizar la siguiente lista de productos:\n\n";
-      pedidoCliente.forEach((p, i) => {
-        mensaje += `${i + 1}. *${p.nombre}* - Cantidad: ${p.cantidad} (${p.tipo})\n`;
-      });
-      
-      const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
-      window.open(url, '_blank');
-    }
-
-    // --- LÓGICA DEL COMERCIANTE ---
-    function agregarProductoComerciante(e) {
+    // Guardar (Crear o Actualizar) Producto
+    function guardarProducto(e) {
       e.preventDefault();
       const nombre = document.getElementById('com-nombre').value.trim();
       const costo = parseFloat(document.getElementById('com-costo').value);
       const unidades = parseInt(document.getElementById('com-unidades').value);
-      const mMayor = parseFloat(document.getElementById('com-margen-mayor').value);
       const mDetal = parseFloat(document.getElementById('com-margen-detal').value);
 
-      inventarioComerciante.push({ nombre, costo, unidades, mMayor, mDetal });
+      if (indiceEdicion === null) {
+        // Nuevo registro
+        inventarioComerciante.push({ nombre, costo, unidades, mDetal });
+      } else {
+        // Actualizar registro existente
+        inventarioComerciante[indiceEdicion] = { nombre, costo, unidades, mDetal };
+        cancelarEdicion();
+      }
+
       document.getElementById('form-comerciante').reset();
+      document.getElementById('com-unidades').value = "24";
+      document.getElementById('com-margen-detal').value = "35";
       calcularTodo();
     }
 
+    // Cargar datos en el formulario para editar
+    function editarProducto(index) {
+      const item = inventarioComerciante[index];
+      document.getElementById('com-nombre').value = item.nombre;
+      document.getElementById('com-costo').value = item.costo;
+      document.getElementById('com-unidades').value = item.unidades;
+      document.getElementById('com-margen-detal').value = item.mDetal;
+
+      indiceEdicion = index;
+      document.getElementById('titulo-form').innerText = "Editar Producto";
+      document.getElementById('btn-submit').innerText = "Actualizar Producto";
+      document.getElementById('btn-cancelar').classList.remove('hidden');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Cancelar la edición actual
+    function cancelarEdicion() {
+      indiceEdicion = null;
+      document.getElementById('form-comerciante').reset();
+      document.getElementById('com-unidades').value = "24";
+      document.getElementById('com-margen-detal').value = "35";
+      document.getElementById('titulo-form').innerText = "Registrar Producto";
+      document.getElementById('btn-submit').innerText = "Guardar y Calcular";
+      document.getElementById('btn-cancelar').classList.add('hidden');
+    }
+
+    // Eliminar producto
+    function eliminarProducto(index) {
+      if (confirm("¿Estás seguro de que deseas eliminar este producto?")) {
+        inventarioComerciante.splice(index, 1);
+        if (indiceEdicion === index) cancelarEdicion();
+        calcularTodo();
+      }
+    }
+
+    // Calcular y renderizar tabla
     function calcularTodo() {
       const tasa = parseFloat(document.getElementById('tasa-bcv').value) || 1;
       const tbody = document.getElementById('tabla-precios');
 
       if (inventarioComerciante.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 italic">No hay productos procesados</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 italic">No hay productos registrados</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = inventarioComerciante.map((item) => {
+      tbody.innerHTML = inventarioComerciante.map((item, index) => {
         const costoUnitario = item.costo / item.unidades;
-        
-        // Cálculos con márgenes de ganancia
-        const precioMayor = costoUnitario * (1 + item.mMayor / 100);
         const precioDetal = costoUnitario * (1 + item.mDetal / 100);
 
         return `
           <tr class="hover:bg-slate-50">
-            <td class="p-2 font-medium text-slate-800">${item.nombre}</td>
-            <td class="p-2">$${costoUnitario.toFixed(2)}<br><span class="text-slate-400 text-[10px]">Bs ${(costoUnitario * tasa).toFixed(2)}</span></td>
-            <td class="p-2 text-blue-600 font-semibold">$${precioMayor.toFixed(2)}<br><span class="text-blue-400 text-[10px]">Bs ${(precioMayor * tasa).toFixed(2)}</span></td>
-            <td class="p-2 text-emerald-600 font-semibold">$${precioDetal.toFixed(2)}<br><span class="text-emerald-400 text-[10px]">Bs ${(precioDetal * tasa).toFixed(2)}</span></td>
+            <td class="p-2.5 font-medium text-slate-800">${item.nombre}</td>
+            <td class="p-2.5">
+              $${costoUnitario.toFixed(2)}
+              <br><span class="text-slate-400 text-[10px]">Bs ${(costoUnitario * tasa).toFixed(2)}</span>
+            </td>
+            <td class="p-2.5 text-emerald-600 font-semibold">
+              $${precioDetal.toFixed(2)}
+              <br><span class="text-emerald-400 text-[10px]">Bs ${(precioDetal * tasa).toFixed(2)}</span>
+            </td>
+            <td class="p-2.5 text-center space-x-2">
+              <button onclick="editarProducto(${index})" class="text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-50 px-2 py-1 rounded transition">Editar</button>
+              <button onclick="eliminarProducto(${index})" class="text-red-600 hover:text-red-800 font-medium text-xs bg-red-50 px-2 py-1 rounded transition">Eliminar</button>
+            </td>
           </tr>
         `;
       }).join('');
