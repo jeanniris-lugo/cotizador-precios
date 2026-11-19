@@ -24,13 +24,16 @@
       <span class="text-xs bg-blue-700 px-2.5 py-1 rounded-full font-medium">Modo Comerciante 🔒</span>
     </div>
 
-    <!-- Pestañas para alternar entre Calculadora y Pago Móvil -->
-    <div class="max-w-3xl mx-auto flex gap-2 mt-3">
-      <button type="button" onclick="cambiarVista('calculadora')" id="btn-tab-calc" class="flex-1 py-2 rounded-lg text-xs font-bold bg-white text-blue-600 shadow transition">
+    <!-- Pestañas para alternar entre vistas -->
+    <div class="max-w-3xl mx-auto grid grid-cols-3 gap-1.5 mt-3">
+      <button type="button" onclick="cambiarVista('calculadora')" id="btn-tab-calc" class="py-2 rounded-lg text-xs font-bold bg-white text-blue-600 shadow transition">
         🧮 Calculadora
       </button>
-      <button type="button" onclick="cambiarVista('pagomovil')" id="btn-tab-pm" class="flex-1 py-2 rounded-lg text-xs font-bold bg-blue-700 text-blue-100 hover:bg-blue-800 transition">
-        📲 Verificación Pago Móvil
+      <button type="button" onclick="cambiarVista('pagomovil')" id="btn-tab-pm" class="py-2 rounded-lg text-xs font-bold bg-blue-700 text-blue-100 hover:bg-blue-800 transition">
+        📲 Pago Móvil
+      </button>
+      <button type="button" onclick="cambiarVista('deudas')" id="btn-tab-deudas" class="py-2 rounded-lg text-xs font-bold bg-blue-700 text-blue-100 hover:bg-blue-800 transition">
+        💳 Quienes Deben
       </button>
     </div>
   </header>
@@ -58,10 +61,16 @@
             <input type="text" id="com-nombre" required placeholder="Ej. Jarabe para la tos 120ml" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Costo Bulto / Caja ($)</label>
-              <input type="number" id="com-costo" step="0.01" required placeholder="Ej. 50.00" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+              <label class="block text-xs font-medium text-slate-700 mb-1">Costo Bulto / Caja</label>
+              <div class="flex gap-1.5">
+                <select id="com-moneda" class="p-2.5 border border-slate-300 rounded-lg bg-slate-50 font-semibold text-slate-700 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="USD">$</option>
+                  <option value="BS">Bs</option>
+                </select>
+                <input type="number" id="com-costo" step="0.01" required placeholder="Ej. 50.00" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+              </div>
             </div>
             <div>
               <label class="block text-xs font-medium text-slate-700 mb-1">Unidades x Bulto / Caja</label>
@@ -110,9 +119,14 @@
     <div id="seccion-pagomovil" class="hidden space-y-6">
       <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
         <h2 class="text-lg font-bold text-slate-900 mb-1">Verificación Pago Móvil</h2>
-        <p class="text-xs text-slate-500 mb-4">Registra el teléfono y monto exacto del cliente; luego márcalo como confirmado al revisar la cuenta.</p>
+        <p class="text-xs text-slate-500 mb-4">Registra quién envía el pago, su teléfono y el monto exacto; luego márcalo como confirmado al revisar la cuenta.</p>
 
         <form id="form-pm" onsubmit="registrarPagoMovil(event)" class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Nombre de quien realiza el pago</label>
+            <input type="text" id="pm-nombre" required placeholder="Ej. Ana Rodríguez" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+          </div>
+
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-medium text-slate-700 mb-1">Teléfono del Cliente</label>
@@ -158,12 +172,12 @@
       <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
         <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
           <h3 class="font-bold text-slate-800">Control de Pagos Móviles</h3>
-          <input type="text" id="buscar-pm" oninput="renderizarPagosMoviles()" placeholder="Buscar teléfono o monto..." class="p-1.5 px-2.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500">
+          <input type="text" id="buscar-pm" oninput="renderizarPagosMoviles()" placeholder="Buscar nombre, teléfono o monto..." class="p-1.5 px-2.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <table class="w-full text-left text-xs text-slate-600">
           <thead class="bg-slate-50 text-slate-700 uppercase">
             <tr>
-              <th class="p-2.5">Teléfono / Hora</th>
+              <th class="p-2.5">Cliente / Teléfono</th>
               <th class="p-2.5">Monto</th>
               <th class="p-2.5">Estado</th>
               <th class="p-2.5 text-center">Acción</th>
@@ -178,6 +192,67 @@
       </div>
     </div>
 
+    <!-- ==================== VISTA 3: QUIENES DEBEN ==================== -->
+    <div id="seccion-deudas" class="hidden space-y-6">
+      <!-- Total acumulado por cobrar -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
+        <div>
+          <span class="block text-xs font-medium text-slate-500">Total acumulado por cobrar</span>
+          <span id="total-deudas-bs" class="text-xl font-bold text-rose-600">Bs 0.00</span>
+        </div>
+        <div class="text-right">
+          <span class="block text-[11px] text-slate-400">Equivalente en $</span>
+          <span id="total-deudas-usd" class="text-sm font-semibold text-slate-700">$0.00</span>
+        </div>
+      </div>
+
+      <!-- Formulario para registrar o sumar deuda -->
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold text-slate-900 mb-1">Quienes Deben</h2>
+        <p class="text-xs text-slate-500 mb-4">Si escribes un cliente que ya está en la lista, el monto se suma a lo que debe.</p>
+
+        <form id="form-deuda" onsubmit="agregarDeuda(event)" class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Nombre del Cliente</label>
+              <input type="text" id="deuda-nombre" required placeholder="Ej. Carlos Gómez" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Qué se lleva / Nota (Opcional)</label>
+              <input type="text" id="deuda-nota" placeholder="Ej. Pan, queso y refresco" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Monto en $ (Opcional)</label>
+              <input type="number" id="deuda-usd" step="0.01" oninput="calcularDeudaBs()" placeholder="Ej. 3.50" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Monto a Sumar en Bs</label>
+              <input type="number" id="deuda-bs" step="0.01" required placeholder="Ej. 210.00" class="w-full p-2.5 border border-rose-300 bg-rose-50/40 font-bold text-rose-900 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none text-sm">
+            </div>
+          </div>
+
+          <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 rounded-lg text-sm transition">
+            ➕ Sumar a la Deuda
+          </button>
+        </form>
+      </div>
+
+      <!-- Listado de personas que deben -->
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-3">
+        <div class="flex flex-wrap justify-between items-center gap-2">
+          <h3 class="font-bold text-slate-800">Personas que Deben</h3>
+          <input type="text" id="buscar-deuda" oninput="renderizarDeudas()" placeholder="Buscar cliente..." class="p-1.5 px-2.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div id="lista-deudas" class="divide-y divide-slate-100 text-xs">
+          <p class="p-4 text-center text-slate-400 italic">No hay deudas registradas</p>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <!-- Lógica JavaScript -->
@@ -185,46 +260,68 @@
     // Variables de Estado
     let inventarioComerciante = JSON.parse(localStorage.getItem('inventarioComerciante')) || [];
     let pagosMoviles = JSON.parse(localStorage.getItem('pagosMoviles')) || [];
+    let deudasClientes = JSON.parse(localStorage.getItem('deudasClientes')) || [];
     let indiceEdicion = null;
 
-    // Alternar entre Calculadora y Verificación Pago Móvil
+    // Alternar entre Calculadora, Verificación Pago Móvil y Quienes Deben
     function cambiarVista(vista) {
-      const secCalc = document.getElementById('seccion-calculadora');
-      const secPm = document.getElementById('seccion-pagomovil');
-      const btnCalc = document.getElementById('btn-tab-calc');
-      const btnPm = document.getElementById('btn-tab-pm');
+      const vistas = {
+        calculadora: document.getElementById('seccion-calculadora'),
+        pagomovil: document.getElementById('seccion-pagomovil'),
+        deudas: document.getElementById('seccion-deudas')
+      };
+      const botones = {
+        calculadora: document.getElementById('btn-tab-calc'),
+        pagomovil: document.getElementById('btn-tab-pm'),
+        deudas: document.getElementById('btn-tab-deudas')
+      };
 
-      if (vista === 'calculadora') {
-        secCalc.classList.remove('hidden');
-        secPm.classList.add('hidden');
-        btnCalc.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-white text-blue-600 shadow transition";
-        btnPm.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-blue-700 text-blue-100 hover:bg-blue-800 transition";
-      } else {
-        secCalc.classList.add('hidden');
-        secPm.classList.remove('hidden');
-        btnPm.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-white text-blue-600 shadow transition";
-        btnCalc.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-blue-700 text-blue-100 hover:bg-blue-800 transition";
-        renderizarPagosMoviles();
-      }
+      Object.keys(vistas).forEach(key => {
+        if (key === vista) {
+          vistas[key].classList.remove('hidden');
+          botones[key].className = "py-2 rounded-lg text-xs font-bold bg-white text-blue-600 shadow transition";
+        } else {
+          vistas[key].classList.add('hidden');
+          botones[key].className = "py-2 rounded-lg text-xs font-bold bg-blue-700 text-blue-100 hover:bg-blue-800 transition";
+        }
+      });
+
+      if (vista === 'pagomovil') renderizarPagosMoviles();
+      if (vista === 'deudas') renderizarDeudas();
     }
 
-    // Guardar (Crear o Actualizar) Producto
+    // Guardar (Crear o Actualizar) Producto (soporta costo en USD o BS)
     function guardarProducto(e) {
       e.preventDefault();
+      const tasa = parseFloat(document.getElementById('tasa-bcv').value) || 1;
       const nombre = document.getElementById('com-nombre').value.trim();
-      const costo = parseFloat(document.getElementById('com-costo').value);
+      const moneda = document.getElementById('com-moneda').value;
+      const costoIngresado = parseFloat(document.getElementById('com-costo').value);
       const unidades = parseInt(document.getElementById('com-unidades').value);
       const mDetal = parseFloat(document.getElementById('com-margen-detal').value);
 
+      // Normalizamos el costo base a USD para mantener coherencia con los cambios de tasa
+      const costoEnUsd = moneda === 'BS' ? (costoIngresado / tasa) : costoIngresado;
+
+      const registro = {
+        nombre,
+        costo: costoEnUsd,
+        monedaOrigen: moneda,
+        costoOriginal: costoIngresado,
+        unidades,
+        mDetal
+      };
+
       if (indiceEdicion === null) {
-        inventarioComerciante.push({ nombre, costo, unidades, mDetal });
+        inventarioComerciante.push(registro);
       } else {
-        inventarioComerciante[indiceEdicion] = { nombre, costo, unidades, mDetal };
+        inventarioComerciante[indiceEdicion] = registro;
         cancelarEdicion();
       }
 
       localStorage.setItem('inventarioComerciante', JSON.stringify(inventarioComerciante));
       document.getElementById('form-comerciante').reset();
+      document.getElementById('com-moneda').value = "USD";
       document.getElementById('com-unidades').value = "24";
       document.getElementById('com-margen-detal').value = "35";
       calcularTodo();
@@ -233,8 +330,10 @@
     // Cargar datos en el formulario para editar
     function editarProducto(index) {
       const item = inventarioComerciante[index];
+      const moneda = item.monedaOrigen || 'USD';
       document.getElementById('com-nombre').value = item.nombre;
-      document.getElementById('com-costo').value = item.costo;
+      document.getElementById('com-moneda').value = moneda;
+      document.getElementById('com-costo').value = item.costoOriginal !== undefined ? item.costoOriginal : item.costo;
       document.getElementById('com-unidades').value = item.unidades;
       document.getElementById('com-margen-detal').value = item.mDetal;
 
@@ -250,6 +349,7 @@
     function cancelarEdicion() {
       indiceEdicion = null;
       document.getElementById('form-comerciante').reset();
+      document.getElementById('com-moneda').value = "USD";
       document.getElementById('com-unidades').value = "24";
       document.getElementById('com-margen-detal').value = "35";
       document.getElementById('titulo-form').innerText = "Registrar Producto";
@@ -272,6 +372,8 @@
       const tasa = parseFloat(document.getElementById('tasa-bcv').value) || 1;
       const tbody = document.getElementById('tabla-precios');
       calcularMontoBs();
+      calcularDeudaBs();
+      renderizarDeudas();
 
       if (inventarioComerciante.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 italic">No hay productos registrados</td></tr>`;
@@ -279,12 +381,20 @@
       }
 
       tbody.innerHTML = inventarioComerciante.map((item, index) => {
-        const costoUnitario = item.costo / item.unidades;
+        // Si el bulto se registró originalmente en Bs, conservamos su valor exacto en Bs y calculamos su equivalente en $ con la tasa actual
+        const costoBultoUsd = item.monedaOrigen === 'BS' ? (item.costoOriginal / tasa) : item.costo;
+        const costoUnitario = costoBultoUsd / item.unidades;
         const precioDetal = costoUnitario * (1 + item.mDetal / 100);
+        const etiquetaOrigen = item.monedaOrigen === 'BS'
+          ? `<span class="block text-[10px] text-amber-600">Bulto: Bs ${Number(item.costoOriginal).toFixed(2)}</span>`
+          : '';
 
         return `
           <tr class="hover:bg-slate-50">
-            <td class="p-2.5 font-medium text-slate-800">${item.nombre}</td>
+            <td class="p-2.5 font-medium text-slate-800">
+              ${item.nombre}
+              ${etiquetaOrigen}
+            </td>
             <td class="p-2.5">
               $${costoUnitario.toFixed(2)}
               <br><span class="text-slate-400 text-[10px]">Bs ${(costoUnitario * tasa).toFixed(2)}</span>
@@ -305,7 +415,7 @@
     // ==================== LÓGICA VERIFICACIÓN PAGO MÓVIL ====================
     function calcularMontoBs() {
       const tasa = parseFloat(document.getElementById('tasa-bcv').value) || 1;
-      const usd = parseFloat(document.getElementById('pm-usd').value);
+      const usd = parseFloat(document.getElementById('pm-usd')?.value);
       if (!isNaN(usd) && usd > 0) {
         document.getElementById('pm-bs').value = (usd * tasa).toFixed(2);
       }
@@ -313,6 +423,7 @@
 
     function registrarPagoMovil(e) {
       e.preventDefault();
+      const nombre = document.getElementById('pm-nombre').value.trim();
       const telefono = document.getElementById('pm-telefono').value.trim();
       const banco = document.getElementById('pm-banco').value;
       const montoBs = parseFloat(document.getElementById('pm-bs').value).toFixed(2);
@@ -321,6 +432,7 @@
 
       pagosMoviles.unshift({
         id: Date.now(),
+        nombre,
         telefono,
         banco,
         montoBs,
@@ -353,6 +465,7 @@
       const filtro = (document.getElementById('buscar-pm')?.value || '').toLowerCase().trim();
 
       const lista = pagosMoviles.filter(p =>
+        (p.nombre || '').toLowerCase().includes(filtro) ||
         p.telefono.toLowerCase().includes(filtro) ||
         p.montoBs.toLowerCase().includes(filtro) ||
         p.referencia.toLowerCase().includes(filtro)
@@ -376,7 +489,8 @@
         return `
           <tr class="hover:bg-slate-50">
             <td class="p-2.5">
-              <span class="font-bold text-slate-800">${p.telefono}</span>
+              <span class="font-bold text-slate-800">${p.nombre || 'Sin nombre'}</span>
+              <br><span class="text-[11px] text-slate-600 font-medium">${p.telefono}</span>
               <br><span class="text-[10px] text-slate-400">${p.hora} • ${p.banco} • Ref: ${p.referencia}</span>
             </td>
             <td class="p-2.5 font-bold text-blue-700">Bs ${p.montoBs}</td>
@@ -388,6 +502,139 @@
               <button onclick="eliminarPagoMovil(${p.id})" class="text-red-500 hover:text-red-700 text-[11px] px-1.5 py-1">✕</button>
             </td>
           </tr>
+        `;
+      }).join('');
+    }
+
+    // ==================== LÓGICA QUIENES DEBEN ====================
+    function calcularDeudaBs() {
+      const tasa = parseFloat(document.getElementById('tasa-bcv').value) || 1;
+      const usd = parseFloat(document.getElementById('deuda-usd')?.value);
+      if (!isNaN(usd) && usd > 0) {
+        document.getElementById('deuda-bs').value = (usd * tasa).toFixed(2);
+      }
+    }
+
+    function agregarDeuda(e) {
+      e.preventDefault();
+      const nombreInput = document.getElementById('deuda-nombre').value.trim();
+      const nota = document.getElementById('deuda-nota').value.trim() || 'Consumo registrado';
+      const monto = parseFloat(document.getElementById('deuda-bs').value);
+      if (isNaN(monto) || monto <= 0) return;
+
+      const fecha = new Date().toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+      const existente = deudasClientes.find(c => c.nombre.toLowerCase() === nombreInput.toLowerCase());
+
+      if (existente) {
+        existente.totalBs = parseFloat((existente.totalBs + monto).toFixed(2));
+        existente.movimientos.unshift({ fecha, nota, monto: monto.toFixed(2) });
+      } else {
+        deudasClientes.unshift({
+          id: Date.now(),
+          nombre: nombreInput,
+          totalBs: parseFloat(monto.toFixed(2)),
+          movimientos: [{ fecha, nota, monto: monto.toFixed(2) }]
+        });
+      }
+
+      localStorage.setItem('deudasClientes', JSON.stringify(deudasClientes));
+      document.getElementById('form-deuda').reset();
+      renderizarDeudas();
+    }
+
+    function sumarRapidoDeuda(id, nombre) {
+      const extra = parseFloat(prompt(`¿Cuánto más se está llevando ${nombre} (en Bs)?`));
+      if (isNaN(extra) || extra <= 0) return;
+      const nota = (prompt("¿Qué se llevó? (opcional)", "Consumo adicional") || "Consumo adicional").trim();
+      const fecha = new Date().toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+
+      deudasClientes = deudasClientes.map(c => {
+        if (c.id === id) {
+          return {
+            ...c,
+            totalBs: parseFloat((c.totalBs + extra).toFixed(2)),
+            movimientos: [{ fecha, nota, monto: extra.toFixed(2) }, ...c.movimientos]
+          };
+        }
+        return c;
+      });
+
+      localStorage.setItem('deudasClientes', JSON.stringify(deudasClientes));
+      renderizarDeudas();
+    }
+
+    function abonarDeuda(id, nombre, totalActual) {
+      const abono = parseFloat(prompt(`¿Cuánto está abonando ${nombre} en Bs? (Debe Bs ${totalActual.toFixed(2)})`, totalActual.toFixed(2)));
+      if (isNaN(abono) || abono <= 0) return;
+
+      const restante = Math.max(0, parseFloat((totalActual - abono).toFixed(2)));
+      if (restante === 0) {
+        if (confirm(`¿Marcar la deuda de ${nombre} como pagada y quitar de la lista?`)) {
+          deudasClientes = deudasClientes.filter(c => c.id !== id);
+        } else {
+          return;
+        }
+      } else {
+        const fecha = new Date().toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+        deudasClientes = deudasClientes.map(c => {
+          if (c.id === id) {
+            return {
+              ...c,
+              totalBs: restante,
+              movimientos: [{ fecha, nota: `Abono (-Bs ${abono.toFixed(2)})`, monto: `-${abono.toFixed(2)}` }, ...c.movimientos]
+            };
+          }
+          return c;
+        });
+      }
+
+      localStorage.setItem('deudasClientes', JSON.stringify(deudasClientes));
+      renderizarDeudas();
+    }
+
+    function renderizarDeudas() {
+      const contenedor = document.getElementById('lista-deudas');
+      const tasa = parseFloat(document.getElementById('tasa-bcv').value) || 1;
+      const filtro = (document.getElementById('buscar-deuda')?.value || '').toLowerCase().trim();
+
+      const totalGeneralBs = deudasClientes.reduce((acc, c) => acc + c.totalBs, 0);
+      const totalEl = document.getElementById('total-deudas-bs');
+      const totalUsdEl = document.getElementById('total-deudas-usd');
+      if (totalEl) totalEl.innerText = `Bs ${totalGeneralBs.toFixed(2)}`;
+      if (totalUsdEl) totalUsdEl.innerText = `$${(totalGeneralBs / tasa).toFixed(2)}`;
+
+      if (!contenedor) return;
+
+      const filtrados = deudasClientes.filter(c => c.nombre.toLowerCase().includes(filtro));
+      if (filtrados.length === 0) {
+        contenedor.innerHTML = `<p class="p-4 text-center text-slate-400 italic">No hay deudas registradas</p>`;
+        return;
+      }
+
+      contenedor.innerHTML = filtrados.map(c => {
+        const ultimosMovs = c.movimientos.slice(0, 3).map(m =>
+          `<span class="block text-[10px] text-slate-500">• ${m.fecha}: ${m.nota} (<b>Bs ${m.monto}</b>)</span>`
+        ).join('');
+
+        const nombreEscapado = c.nombre.replace(/'/g, "\\'");
+
+        return `
+          <div class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="font-bold text-slate-800 text-sm">${c.nombre}</div>
+              <div class="mt-1 space-y-0.5">${ultimosMovs}</div>
+            </div>
+            <div class="flex sm:flex-col items-center sm:items-end justify-between gap-2">
+              <div class="text-right">
+                <span class="font-bold text-rose-600 text-sm">Bs ${c.totalBs.toFixed(2)}</span>
+                <span class="block text-[10px] text-slate-400">~$${(c.totalBs / tasa).toFixed(2)}</span>
+              </div>
+              <div class="flex gap-1.5">
+                <button type="button" onclick="sumarRapidoDeuda(${c.id}, '${nombreEscapado}')" class="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1 rounded text-[11px] font-medium transition">+ Sumar</button>
+                <button type="button" onclick="abonarDeuda(${c.id}, '${nombreEscapado}', ${c.totalBs})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded text-[11px] font-medium transition">Abonar</button>
+              </div>
+            </div>
+          </div>
         `;
       }).join('');
     }
