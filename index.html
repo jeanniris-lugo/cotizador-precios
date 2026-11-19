@@ -23,6 +23,16 @@
       </h1>
       <span class="text-xs bg-blue-700 px-2.5 py-1 rounded-full font-medium">Modo Comerciante 🔒</span>
     </div>
+
+    <!-- Pestañas para alternar entre Calculadora y Pago Móvil -->
+    <div class="max-w-3xl mx-auto flex gap-2 mt-3">
+      <button type="button" onclick="cambiarVista('calculadora')" id="btn-tab-calc" class="flex-1 py-2 rounded-lg text-xs font-bold bg-white text-blue-600 shadow transition">
+        🧮 Calculadora
+      </button>
+      <button type="button" onclick="cambiarVista('pagomovil')" id="btn-tab-pm" class="flex-1 py-2 rounded-lg text-xs font-bold bg-blue-700 text-blue-100 hover:bg-blue-800 transition">
+        📲 Verificación Pago Móvil
+      </button>
+    </div>
   </header>
 
   <main class="max-w-3xl mx-auto p-4 space-y-6">
@@ -36,61 +46,136 @@
       <input type="number" id="tasa-bcv" value="60.00" step="0.01" onchange="calcularTodo()" class="w-28 p-2 border border-amber-300 rounded-lg text-right font-bold text-amber-900 bg-white outline-none focus:ring-2 focus:ring-amber-500">
     </div>
 
-    <!-- Formulario para fijar costo y márgenes -->
-    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-      <h2 id="titulo-form" class="text-lg font-bold text-slate-900 mb-3">Registrar Producto</h2>
-      
-      <form id="form-comerciante" onsubmit="guardarProducto(event)" class="space-y-3">
-        <div>
-          <label class="block text-xs font-medium text-slate-700 mb-1">Nombre del Producto</label>
-          <input type="text" id="com-nombre" required placeholder="Ej. Jarabe para la tos 120ml" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
+    <!-- ==================== VISTA 1: CALCULADORA ==================== -->
+    <div id="seccion-calculadora" class="space-y-6">
+      <!-- Formulario para fijar costo y márgenes -->
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <h2 id="titulo-form" class="text-lg font-bold text-slate-900 mb-3">Registrar Producto</h2>
+        
+        <form id="form-comerciante" onsubmit="guardarProducto(event)" class="space-y-3">
           <div>
-            <label class="block text-xs font-medium text-slate-700 mb-1">Costo Bulto / Caja ($)</label>
-            <input type="number" id="com-costo" step="0.01" required placeholder="Ej. 50.00" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <label class="block text-xs font-medium text-slate-700 mb-1">Nombre del Producto</label>
+            <input type="text" id="com-nombre" required placeholder="Ej. Jarabe para la tos 120ml" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Costo Bulto / Caja ($)</label>
+              <input type="number" id="com-costo" step="0.01" required placeholder="Ej. 50.00" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Unidades x Bulto / Caja</label>
+              <input type="number" id="com-unidades" min="1" value="24" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+          </div>
+
           <div>
-            <label class="block text-xs font-medium text-slate-700 mb-1">Unidades x Bulto / Caja</label>
-            <input type="number" id="com-unidades" min="1" value="24" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <label class="block text-xs font-medium text-slate-700 mb-1">Ganancia Detal (%)</label>
+            <input type="number" id="com-margen-detal" value="35" step="0.01" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
-        </div>
 
-        <div>
-          <label class="block text-xs font-medium text-slate-700 mb-1">Ganancia Detal (%)</label>
-          <input type="number" id="com-margen-detal" value="35" step="0.01" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-        </div>
+          <div class="flex gap-2 pt-1">
+            <button type="submit" id="btn-submit" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-lg text-sm transition">
+              Guardar y Calcular
+            </button>
+            <button type="button" id="btn-cancelar" onclick="cancelarEdicion()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2.5 rounded-lg text-sm transition">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
 
-        <div class="flex gap-2 pt-1">
-          <button type="submit" id="btn-submit" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-lg text-sm transition">
-            Guardar y Calcular
-          </button>
-          <button type="button" id="btn-cancelar" onclick="cancelarEdicion()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2.5 rounded-lg text-sm transition">
-            Cancelar
-          </button>
-        </div>
-      </form>
+      <!-- Tabla de Precios Calculados -->
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+        <h3 class="font-bold text-slate-800 mb-3">Precios Sugeridos de Inventario</h3>
+        <table class="w-full text-left text-xs text-slate-600">
+          <thead class="bg-slate-50 text-slate-700 uppercase">
+            <tr>
+              <th class="p-2.5">Producto</th>
+              <th class="p-2.5">C/U Costo</th>
+              <th class="p-2.5">Precio Detal</th>
+              <th class="p-2.5 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-precios" class="divide-y divide-slate-100">
+            <tr>
+              <td colspan="4" class="p-4 text-center text-slate-400 italic">No hay productos registrados</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- Tabla de Precios Calculados -->
-    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-      <h3 class="font-bold text-slate-800 mb-3">Precios Sugeridos de Inventario</h3>
-      <table class="w-full text-left text-xs text-slate-600">
-        <thead class="bg-slate-50 text-slate-700 uppercase">
-          <tr>
-            <th class="p-2.5">Producto</th>
-            <th class="p-2.5">C/U Costo</th>
-            <th class="p-2.5">Precio Detal</th>
-            <th class="p-2.5 text-center">Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-precios" class="divide-y divide-slate-100">
-          <tr>
-            <td colspan="4" class="p-4 text-center text-slate-400 italic">No hay productos registrados</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- ==================== VISTA 2: VERIFICACIÓN PAGO MÓVIL ==================== -->
+    <div id="seccion-pagomovil" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold text-slate-900 mb-1">Verificación Pago Móvil</h2>
+        <p class="text-xs text-slate-500 mb-4">Registra el teléfono y monto exacto del cliente; luego márcalo como confirmado al revisar la cuenta.</p>
+
+        <form id="form-pm" onsubmit="registrarPagoMovil(event)" class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Teléfono del Cliente</label>
+              <input type="tel" id="pm-telefono" required maxlength="11" placeholder="Ej. 04121234567" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Banco Emisor</label>
+              <select id="pm-banco" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white">
+                <option value="0102 - BDV">0102 - BDV</option>
+                <option value="0134 - Banesco">0134 - Banesco</option>
+                <option value="0105 - Mercantil">0105 - Mercantil</option>
+                <option value="0108 - Provincial">0108 - Provincial</option>
+                <option value="0172 - Bancamiga">0172 - Bancamiga</option>
+                <option value="0191 - BNC">0191 - BNC</option>
+                <option value="Otro">Otro Banco</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Monto en $ (Opcional)</label>
+              <input type="number" id="pm-usd" step="0.01" oninput="calcularMontoBs()" placeholder="Ej. 10.00" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Monto Exacto en Bs</label>
+              <input type="number" id="pm-bs" step="0.01" required placeholder="Ej. 600.00" class="w-full p-2.5 border border-blue-400 bg-blue-50/40 font-bold text-blue-900 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Últimos dígitos de Referencia (Opcional)</label>
+            <input type="text" id="pm-ref" placeholder="Ej. 458921" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+          </div>
+
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg text-sm transition">
+            Guardar como Pendiente
+          </button>
+        </form>
+      </div>
+
+      <!-- Lista de Pagos Móviles -->
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+        <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+          <h3 class="font-bold text-slate-800">Control de Pagos Móviles</h3>
+          <input type="text" id="buscar-pm" oninput="renderizarPagosMoviles()" placeholder="Buscar teléfono o monto..." class="p-1.5 px-2.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <table class="w-full text-left text-xs text-slate-600">
+          <thead class="bg-slate-50 text-slate-700 uppercase">
+            <tr>
+              <th class="p-2.5">Teléfono / Hora</th>
+              <th class="p-2.5">Monto</th>
+              <th class="p-2.5">Estado</th>
+              <th class="p-2.5 text-center">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-pagomovil" class="divide-y divide-slate-100">
+            <tr>
+              <td colspan="4" class="p-4 text-center text-slate-400 italic">No hay pagos móviles registrados</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
   </main>
@@ -98,8 +183,30 @@
   <!-- Lógica JavaScript -->
   <script>
     // Variables de Estado
-    let inventarioComerciante = [];
-    let indiceEdicion = null; // Controla si se está editando un producto
+    let inventarioComerciante = JSON.parse(localStorage.getItem('inventarioComerciante')) || [];
+    let pagosMoviles = JSON.parse(localStorage.getItem('pagosMoviles')) || [];
+    let indiceEdicion = null;
+
+    // Alternar entre Calculadora y Verificación Pago Móvil
+    function cambiarVista(vista) {
+      const secCalc = document.getElementById('seccion-calculadora');
+      const secPm = document.getElementById('seccion-pagomovil');
+      const btnCalc = document.getElementById('btn-tab-calc');
+      const btnPm = document.getElementById('btn-tab-pm');
+
+      if (vista === 'calculadora') {
+        secCalc.classList.remove('hidden');
+        secPm.classList.add('hidden');
+        btnCalc.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-white text-blue-600 shadow transition";
+        btnPm.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-blue-700 text-blue-100 hover:bg-blue-800 transition";
+      } else {
+        secCalc.classList.add('hidden');
+        secPm.classList.remove('hidden');
+        btnPm.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-white text-blue-600 shadow transition";
+        btnCalc.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-blue-700 text-blue-100 hover:bg-blue-800 transition";
+        renderizarPagosMoviles();
+      }
+    }
 
     // Guardar (Crear o Actualizar) Producto
     function guardarProducto(e) {
@@ -110,14 +217,13 @@
       const mDetal = parseFloat(document.getElementById('com-margen-detal').value);
 
       if (indiceEdicion === null) {
-        // Nuevo registro
         inventarioComerciante.push({ nombre, costo, unidades, mDetal });
       } else {
-        // Actualizar registro existente
         inventarioComerciante[indiceEdicion] = { nombre, costo, unidades, mDetal };
         cancelarEdicion();
       }
 
+      localStorage.setItem('inventarioComerciante', JSON.stringify(inventarioComerciante));
       document.getElementById('form-comerciante').reset();
       document.getElementById('com-unidades').value = "24";
       document.getElementById('com-margen-detal').value = "35";
@@ -155,15 +261,17 @@
     function eliminarProducto(index) {
       if (confirm("¿Estás seguro de que deseas eliminar este producto?")) {
         inventarioComerciante.splice(index, 1);
+        localStorage.setItem('inventarioComerciante', JSON.stringify(inventarioComerciante));
         if (indiceEdicion === index) cancelarEdicion();
         calcularTodo();
       }
     }
 
-    // Calcular y renderizar tabla
+    // Calcular y renderizar tabla de precios
     function calcularTodo() {
       const tasa = parseFloat(document.getElementById('tasa-bcv').value) || 1;
       const tbody = document.getElementById('tabla-precios');
+      calcularMontoBs();
 
       if (inventarioComerciante.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 italic">No hay productos registrados</td></tr>`;
@@ -193,6 +301,99 @@
         `;
       }).join('');
     }
+
+    // ==================== LÓGICA VERIFICACIÓN PAGO MÓVIL ====================
+    function calcularMontoBs() {
+      const tasa = parseFloat(document.getElementById('tasa-bcv').value) || 1;
+      const usd = parseFloat(document.getElementById('pm-usd').value);
+      if (!isNaN(usd) && usd > 0) {
+        document.getElementById('pm-bs').value = (usd * tasa).toFixed(2);
+      }
+    }
+
+    function registrarPagoMovil(e) {
+      e.preventDefault();
+      const telefono = document.getElementById('pm-telefono').value.trim();
+      const banco = document.getElementById('pm-banco').value;
+      const montoBs = parseFloat(document.getElementById('pm-bs').value).toFixed(2);
+      const referencia = document.getElementById('pm-ref').value.trim() || 'N/A';
+      const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      pagosMoviles.unshift({
+        id: Date.now(),
+        telefono,
+        banco,
+        montoBs,
+        referencia,
+        hora,
+        estado: 'Pendiente'
+      });
+
+      localStorage.setItem('pagosMoviles', JSON.stringify(pagosMoviles));
+      document.getElementById('form-pm').reset();
+      renderizarPagosMoviles();
+    }
+
+    function confirmarPagoMovil(id) {
+      pagosMoviles = pagosMoviles.map(p => p.id === id ? { ...p, estado: 'Confirmado' } : p);
+      localStorage.setItem('pagosMoviles', JSON.stringify(pagosMoviles));
+      renderizarPagosMoviles();
+    }
+
+    function eliminarPagoMovil(id) {
+      if (confirm("¿Eliminar este registro de Pago Móvil?")) {
+        pagosMoviles = pagosMoviles.filter(p => p.id !== id);
+        localStorage.setItem('pagosMoviles', JSON.stringify(pagosMoviles));
+        renderizarPagosMoviles();
+      }
+    }
+
+    function renderizarPagosMoviles() {
+      const tbody = document.getElementById('tabla-pagomovil');
+      const filtro = (document.getElementById('buscar-pm')?.value || '').toLowerCase().trim();
+
+      const lista = pagosMoviles.filter(p =>
+        p.telefono.toLowerCase().includes(filtro) ||
+        p.montoBs.toLowerCase().includes(filtro) ||
+        p.referencia.toLowerCase().includes(filtro)
+      );
+
+      if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 italic">No hay pagos móviles registrados</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = lista.map(p => {
+        const confirmado = p.estado === 'Confirmado';
+        const estadoClase = confirmado
+          ? "bg-emerald-100 text-emerald-700"
+          : "bg-amber-100 text-amber-800";
+
+        const botonConfirmar = confirmado
+          ? `<span class="text-emerald-600 font-semibold text-[11px]">✓ Confirmado</span>`
+          : `<button onclick="confirmarPagoMovil(${p.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-2.5 py-1 rounded text-[11px] transition">Confirmar</button>`;
+
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="p-2.5">
+              <span class="font-bold text-slate-800">${p.telefono}</span>
+              <br><span class="text-[10px] text-slate-400">${p.hora} • ${p.banco} • Ref: ${p.referencia}</span>
+            </td>
+            <td class="p-2.5 font-bold text-blue-700">Bs ${p.montoBs}</td>
+            <td class="p-2.5">
+              <span class="${estadoClase} px-2 py-0.5 rounded-full text-[10px] font-semibold">${p.estado}</span>
+            </td>
+            <td class="p-2.5 text-center space-x-1">
+              ${botonConfirmar}
+              <button onclick="eliminarPagoMovil(${p.id})" class="text-red-500 hover:text-red-700 text-[11px] px-1.5 py-1">✕</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Inicializar tabla al cargar
+    calcularTodo();
 
     // --- REGISTRO DEL SERVICE WORKER PARA PWA ---
     if ('serviceWorker' in navigator) {
