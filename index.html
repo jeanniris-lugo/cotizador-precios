@@ -40,13 +40,18 @@
 
   <main class="max-w-3xl mx-auto p-4 space-y-6">
 
-    <!-- Control de Tasa del Día -->
-    <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl flex justify-between items-center shadow-sm">
+    <!-- Control de Tasa del Día (Auto-BCV + Manual) -->
+    <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 shadow-sm">
       <div>
-        <span class="block text-xs font-semibold text-amber-800">Tasa del día ($ / Bs)</span>
-        <span class="text-xs text-amber-600">Ajusta el valor en Bs para el cálculo automático</span>
+        <span class="block text-xs font-semibold text-amber-800">Tasa del día BCV ($ / Bs)</span>
+        <span id="estado-tasa-bcv" class="text-xs text-amber-700">Sincronización automática con fuentes BCV</span>
       </div>
-      <input type="number" id="tasa-bcv" value="60.00" step="0.01" onchange="calcularTodo()" class="w-28 p-2 border border-amber-300 rounded-lg text-right font-bold text-amber-900 bg-white outline-none focus:ring-2 focus:ring-amber-500">
+      <div class="flex items-center justify-end gap-2">
+        <button type="button" onclick="obtenerTasaBCV(true)" id="btn-actualizar-bcv" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition shadow-sm">
+          🔄 Actualizar BCV
+        </button>
+        <input type="number" id="tasa-bcv" value="60.00" step="0.01" onchange="guardarTasaManual()" class="w-28 p-2 border border-amber-300 rounded-lg text-right font-bold text-amber-900 bg-white outline-none focus:ring-2 focus:ring-amber-500">
+      </div>
     </div>
 
     <!-- ==================== VISTA 1: CALCULADORA ==================== -->
@@ -119,7 +124,7 @@
     <div id="seccion-pagomovil" class="hidden space-y-6">
       <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
         <h2 class="text-lg font-bold text-slate-900 mb-1">Verificación Pago Móvil</h2>
-        <p class="text-xs text-slate-500 mb-4">Registra quién envía el pago, su teléfono y el monto exacto; luego márcalo como confirmado al revisar la cuenta.</p>
+        <p class="text-xs text-slate-500 mb-4">Registra quién envía el pago, su teléfono y el monto exacto en Bs; luego márcalo como confirmado al revisar la cuenta.</p>
 
         <form id="form-pm" onsubmit="registrarPagoMovil(event)" class="space-y-3">
           <div>
@@ -146,20 +151,15 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Monto en $ (Opcional)</label>
-              <input type="number" id="pm-usd" step="0.01" oninput="calcularMontoBs()" placeholder="Ej. 10.00" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-            </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-medium text-slate-700 mb-1">Monto Exacto en Bs</label>
               <input type="number" id="pm-bs" step="0.01" required placeholder="Ej. 600.00" class="w-full p-2.5 border border-blue-400 bg-blue-50/40 font-bold text-blue-900 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
             </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-slate-700 mb-1">Últimos dígitos de Referencia (Opcional)</label>
-            <input type="text" id="pm-ref" placeholder="Ej. 458921" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Últimos dígitos de Referencia (Opcional)</label>
+              <input type="text" id="pm-ref" placeholder="Ej. 458921" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
           </div>
 
           <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg text-sm transition">
@@ -263,6 +263,115 @@
     let deudasClientes = JSON.parse(localStorage.getItem('deudasClientes')) || [];
     let indiceEdicion = null;
 
+    // ==================== TASA BCV AUTOMÁTICA ====================
+    const FUENTES_BCV = [
+      {
+        url: 'https://ve.dolarapi.com/v1/dolares/oficial',
+        extraerTasa: (data) => data && (data.promedio || data.venta || data.compra)
+      },
+      {
+        url: 'https://pydolarve.org/api/v1/dollar?page=bcv',
+        extraerTasa: (data) => data && data.monitors && data.monitors.usd && data.monitors.usd.price
+      }
+    ];
+
+    function cargarTasaGuardada() {
+      const guardada = JSON.parse(localStorage.getItem('tasaBCVGuardada'));
+      const inputTasa = document.getElementById('tasa-bcv');
+      const estadoEl = document.getElementById('estado-tasa-bcv');
+
+      if (guardada && guardada.valor > 0) {
+        inputTasa.value = Number(guardada.valor).toFixed(2);
+        if (estadoEl) {
+          estadoEl.innerText = `${guardada.origen || 'Guardada'} • ${guardada.fecha || ''}`;
+        }
+      }
+    }
+
+    function guardarTasaManual() {
+      const inputTasa = document.getElementById('tasa-bcv');
+      const estadoEl = document.getElementById('estado-tasa-bcv');
+      const valor = parseFloat(inputTasa.value);
+
+      if (!isNaN(valor) && valor > 0) {
+        const ahora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        localStorage.setItem('tasaBCVGuardada', JSON.stringify({
+          valor,
+          origen: 'Ajuste manual',
+          fecha: `Hoy ${ahora}`
+        }));
+        if (estadoEl) estadoEl.innerText = `Ajuste manual • Hoy ${ahora}`;
+      }
+      calcularTodo();
+    }
+
+    async function fetchConTimeout(url, ms = 5000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), ms);
+      try {
+        const resp = await fetch(url, { signal: controller.signal, cache: 'no-store' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        return await resp.json();
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function obtenerTasaBCV(esManual = false) {
+      const btn = document.getElementById('btn-actualizar-bcv');
+      const inputTasa = document.getElementById('tasa-bcv');
+      const estadoEl = document.getElementById('estado-tasa-bcv');
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = '⏳...';
+      }
+      if (estadoEl && esManual) {
+        estadoEl.innerText = 'Consultando tasa oficial BCV...';
+      }
+
+      for (const fuente of FUENTES_BCV) {
+        try {
+          const data = await fetchConTimeout(fuente.url);
+          const tasaNum = parseFloat(fuente.extraerTasa(data));
+          if (!isNaN(tasaNum) && tasaNum > 0) {
+            const redondeada = Number(tasaNum.toFixed(2));
+            inputTasa.value = redondeada.toFixed(2);
+            const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            localStorage.setItem('tasaBCVGuardada', JSON.stringify({
+              valor: redondeada,
+              origen: 'BCV automático',
+              fecha: `Act. ${hora}`
+            }));
+
+            if (estadoEl) {
+              estadoEl.innerText = `BCV oficial actualizado • ${hora}`;
+            }
+            calcularTodo();
+            if (btn) {
+              btn.disabled = false;
+              btn.innerText = '🔄 Actualizar BCV';
+            }
+            return;
+          }
+        } catch (_) {
+          // Intenta la siguiente fuente disponible
+        }
+      }
+
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = '🔄 Actualizar BCV';
+      }
+      if (estadoEl) {
+        const guardada = JSON.parse(localStorage.getItem('tasaBCVGuardada'));
+        estadoEl.innerText = guardada
+          ? `Sin conexión BCV • Usando ${guardada.origen.toLowerCase()} (${guardada.fecha || ''})`
+          : 'No se pudo consultar BCV • Ingresa o ajusta la tasa manual';
+      }
+    }
+
     // Alternar entre Calculadora, Verificación Pago Móvil y Quienes Deben
     function cambiarVista(vista) {
       const vistas = {
@@ -300,7 +409,6 @@
       const unidades = parseInt(document.getElementById('com-unidades').value);
       const mDetal = parseFloat(document.getElementById('com-margen-detal').value);
 
-      // Normalizamos el costo base a USD para mantener coherencia con los cambios de tasa
       const costoEnUsd = moneda === 'BS' ? (costoIngresado / tasa) : costoIngresado;
 
       const registro = {
@@ -371,7 +479,6 @@
     function calcularTodo() {
       const tasa = parseFloat(document.getElementById('tasa-bcv').value) || 1;
       const tbody = document.getElementById('tabla-precios');
-      calcularMontoBs();
       calcularDeudaBs();
       renderizarDeudas();
 
@@ -381,7 +488,6 @@
       }
 
       tbody.innerHTML = inventarioComerciante.map((item, index) => {
-        // Si el bulto se registró originalmente en Bs, conservamos su valor exacto en Bs y calculamos su equivalente en $ con la tasa actual
         const costoBultoUsd = item.monedaOrigen === 'BS' ? (item.costoOriginal / tasa) : item.costo;
         const costoUnitario = costoBultoUsd / item.unidades;
         const precioDetal = costoUnitario * (1 + item.mDetal / 100);
@@ -413,14 +519,6 @@
     }
 
     // ==================== LÓGICA VERIFICACIÓN PAGO MÓVIL ====================
-    function calcularMontoBs() {
-      const tasa = parseFloat(document.getElementById('tasa-bcv').value) || 1;
-      const usd = parseFloat(document.getElementById('pm-usd')?.value);
-      if (!isNaN(usd) && usd > 0) {
-        document.getElementById('pm-bs').value = (usd * tasa).toFixed(2);
-      }
-    }
-
     function registrarPagoMovil(e) {
       e.preventDefault();
       const nombre = document.getElementById('pm-nombre').value.trim();
@@ -639,8 +737,10 @@
       }).join('');
     }
 
-    // Inicializar tabla al cargar
+    // Inicializar tasa guardada, tabla y consulta automática BCV
+    cargarTasaGuardada();
     calcularTodo();
+    obtenerTasaBCV(false);
 
     // --- REGISTRO DEL SERVICE WORKER PARA PWA ---
     if ('serviceWorker' in navigator) {
