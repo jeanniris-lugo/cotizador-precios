@@ -283,7 +283,7 @@
   </main>
 
   <!-- Plantilla Oculta para Exportación limpia a PDF -->
-  <div id="area-impresion-pdf" class="hidden print:block"></div>
+  <div id="area-impresion-pdf" class="hidden"></div>
 
   <!-- Cuadro Modal Bonito para Sumar Monto a un Cliente -->
   <div id="modal-sumar-deuda" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center p-4 no-print">
@@ -319,7 +319,6 @@
 
   <!-- Lógica JavaScript -->
   <script>
-    // Variables de Estado
     let inventarioComerciante = JSON.parse(localStorage.getItem('inventarioComerciante')) || [];
     let pagosMoviles = JSON.parse(localStorage.getItem('pagosMoviles')) || [];
     let deudasClientes = JSON.parse(localStorage.getItem('deudasClientes')) || [];
@@ -418,9 +417,7 @@
             }
             return;
           }
-        } catch (_) {
-          // Intenta la siguiente fuente disponible
-        }
+        } catch (_) {}
       }
 
       if (btn) {
@@ -462,7 +459,7 @@
       if (vista === 'deudas') renderizarDeudas();
     }
 
-    // Guardar (Crear o Actualizar) Producto (soporta costo en USD o BS)
+    // Guardar (Crear o Actualizar) Producto
     function guardarProducto(e) {
       e.preventDefault();
       const tasa = parseFloat(document.getElementById('tasa-bcv').value) || 1;
@@ -498,7 +495,6 @@
       calcularTodo();
     }
 
-    // Cargar datos en el formulario para editar
     function editarProducto(index) {
       const item = inventarioComerciante[index];
       const moneda = item.monedaOrigen || 'USD';
@@ -516,7 +512,6 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Cancelar la edición actual
     function cancelarEdicion() {
       indiceEdicion = null;
       document.getElementById('form-comerciante').reset();
@@ -528,7 +523,6 @@
       document.getElementById('btn-cancelar').classList.add('hidden');
     }
 
-    // Eliminar producto
     function eliminarProducto(index) {
       if (confirm("¿Estás seguro de que deseas eliminar este producto?")) {
         inventarioComerciante.splice(index, 1);
@@ -538,7 +532,6 @@
       }
     }
 
-    // Calcular y renderizar tabla de precios (primero Bs, luego $)
     function calcularTodo() {
       const tasa = parseFloat(document.getElementById('tasa-bcv').value) || 1;
       const tbody = document.getElementById('tabla-precios');
@@ -653,8 +646,10 @@
       `;
 
       contenedorPdf.classList.remove('hidden');
+      window.addEventListener('afterprint', () => {
+        contenedorPdf.classList.add('hidden');
+      }, { once: true });
       window.print();
-      contenedorPdf.classList.add('hidden');
     }
 
     function compartirCatalogoWhatsApp() {
@@ -681,7 +676,7 @@
       mensaje += `_Precios sujetos a variación de la tasa del día._`;
 
       const urlWhatsApp = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
-      window.open(urlWhatsApp, '_blank');
+      window.open(urlWhatsApp, '_blank', 'noopener,noreferrer');
     }
 
     // ==================== LÓGICA VERIFICACIÓN PAGO MÓVIL ====================
